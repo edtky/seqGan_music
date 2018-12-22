@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from torch.autograd import Variable
 from math import ceil
+import random
 
 
 def prepare_generator_batch(samples, start_letter=0, gpu=False):
@@ -65,7 +66,7 @@ def prepare_discriminator_data(pos_samples, neg_samples, gpu=False):
     return inp, target
 
 
-def batchwise_sample(gen, num_samples, batch_size):
+def batchwise_sample(gen, num_samples, batch_size, seq_len):
     """
     Sample num_samples samples batch_size samples at a time from gen.
     Does not require gpu since gen.sample() takes care of that.
@@ -73,7 +74,7 @@ def batchwise_sample(gen, num_samples, batch_size):
 
     samples = []
     for i in range(int(ceil(num_samples/float(batch_size)))):
-        samples.append(gen.sample(batch_size))
+        samples.append(gen.sample(batch_size, seq_len))
 
     return torch.cat(samples, 0)[:num_samples]
 
@@ -88,4 +89,41 @@ def batchwise_oracle_nll(gen, oracle, num_samples, batch_size, max_seq_len, star
 
     return oracle_nll/(num_samples/batch_size)
     
+def load_music_file(file):
+    with open(file, 'r') as file:
+        text = file.read()
+        
+    # get vocabulary set
+    words = sorted(tuple(set(text.split())))
+    n = len(words)
+
+    # create word-integer encoder/decoder
+    word2int = dict(zip(words, list(range(n))))
+    int2word = dict(zip(list(range(n)), words))
+
+    # encode all words in dataset into integers
+    encoded = np.array([word2int[word] for word in text.split()])
+    
+    return n, word2int, int2word, encoded
+
+def batch_music_samples(data, seq_len):
+    batches = []
+    i=0
+    while i+seq_len <= len(data):
+        batch = list(data[i:i+seq_len])
+        batches.append(batch)
+        i += seq_len
+    return batches
+    
+def train_val_split(data, train_size):
+    random.seed(1)
+    random.shuffle(data)
+    train = torch.tensor(data[:train_size]).type(torch.LongTensor)
+    val = torch.tensor(data[train_size:]).type(torch.LongTensor)
+    return train, val
+
+def positive_sample(data, n):
+    torch.tensor(data)
+    sample_idx = random.sample(range(1, len(data)), n)
+    return data[sample_idx]   
     

@@ -48,7 +48,7 @@ class Generator(nn.Module):
         out = F.log_softmax(out, dim=1)
         return out, hidden
 
-    def sample(self, num_samples, start_letter=0):
+    def sample(self, num_samples, seq_len, start_letter=0):
         """
         Samples the network and returns num_samples samples of length max_seq_len.
 
@@ -56,7 +56,7 @@ class Generator(nn.Module):
             - samples: num_samples x max_seq_length (a sampled sequence in each row)
         """
 
-        samples = torch.zeros(num_samples, self.max_seq_len).type(torch.LongTensor)
+        samples = torch.zeros(num_samples, seq_len).type(torch.LongTensor)
 
         h = self.init_hidden(num_samples)
         inp = autograd.Variable(torch.LongTensor([start_letter]*num_samples))
@@ -65,7 +65,7 @@ class Generator(nn.Module):
             samples = samples.cuda()
             inp = inp.cuda()
 
-        for i in range(self.max_seq_len):
+        for i in range(seq_len):
             out, h = self.forward(inp, h)               # out: num_samples x vocab_size
             out = torch.multinomial(torch.exp(out), 1)  # num_samples x 1 (sampling from each row)
             samples[:, i] = out.view(-1).data
