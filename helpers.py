@@ -118,8 +118,8 @@ def batch_music_samples(data, seq_len):
 def train_val_split(data, train_size):
     random.seed(1)
     random.shuffle(data)
-    train = torch.tensor(data[:train_size]).type(torch.LongTensor)
-    val = torch.tensor(data[train_size:]).type(torch.LongTensor)
+    train = torch.LongTensor(data[:train_size])
+    val = torch.LongTensor(data[train_size:])
     return train, val
 
 def positive_sample(data, n):
